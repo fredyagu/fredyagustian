@@ -6,10 +6,9 @@ from telegram.ext import (
     ConversationHandler, ContextTypes, MessageHandler, filters
 )
 import datetime
-
 import os
-BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # === STATE ===
 PILIH_TANGGAL, PILIH_PAKET, INPUT_CUSTOM = range(3)
@@ -30,7 +29,7 @@ def tulis_log(update: Update):
 
 # === /START ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    tulis_log(update)  # catat user yang akses bot
+    tulis_log(update)
     return await show_calendar(update, context)
 
 # === KALENDER ===
@@ -181,7 +180,7 @@ async def ulang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await show_calendar(update, context, new_message=True)
 
 # === MAIN ===
-def main():
+def run_bot():
     app = Application.builder().token(BOT_TOKEN).build()
 
     conv = ConversationHandler(
@@ -205,8 +204,8 @@ def main():
 
     app.add_handler(conv)
 
-    print("Bot berjalan...")
+    print("Bot berjalan di Koyeb...")
     app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    run_bot()
