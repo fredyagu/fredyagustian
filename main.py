@@ -116,7 +116,7 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     paket_text = f"Paket Custom {rupiah(hp)}" if custom else f"Paket {context.user_data['speed']}Mbps {rupiah(hp)}"
     text = (
         " -= *Hitung PDD+2 by Fredy* =-\n"
-        "Ketik /start jika bot tidak respon\n\n"
+        "tekan HITUNG ULANG atau /start jika bot tidak respon\n\n"
         f"*Tanggal PS : {tanggal_text}*\n"
         f"*{paket_text}*\n\n"
         f"*Iuran bulanan      : {rupiah(hargabulanan)}/bln*\n"
