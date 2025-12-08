@@ -116,14 +116,14 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     paket_text = f"Paket Custom {rupiah(hp)}" if custom else f"Paket {context.user_data['speed']}Mbps {rupiah(hp)}"
     text = (
         " -= *Hitung PDD+2 by Fredy* =-\n"
-        "tekan HITUNG ULANG atau /start jika bot tidak respon\n\n"
+        "tekan *HITUNG ULANG* atau /start jika bot tidak respon\n\n"
         f"*Tanggal PS : {tanggal_text}*\n"
         f"*{paket_text}*\n\n"
         f"*Iuran bulanan      : {rupiah(hargabulanan)}/bln*\n"
         f"*Estimasi Prorata : {rupiah(prorata)}*\n"
         f"*Estimasi PDD+2  : {rupiah(pdd)}*\n"
     )
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton("PILIH TANGGAL LAIN", callback_data="start")]])
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton("HITUNG ULANG", callback_data="start")]])
     if update.callback_query:
         await update.callback_query.edit_message_text(text, parse_mode="Markdown", reply_markup=markup)
     else:
