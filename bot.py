@@ -1,21 +1,13 @@
 import os
-import logging
+import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler,
+    Application, CommandHandler, CallbackQueryHandler,
     ConversationHandler, ContextTypes, MessageHandler, filters
 )
-import datetime
 
-# Logging bawaan Python-Telegram-Bot (wajib untuk debug)
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise Exception("BOT_TOKEN tidak ditemukan! Pastikan sudah ditambah di Zeabur → Environment Variables.")
+# Ambil token dari environment variable
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # === STATE ===
 PILIH_TANGGAL, PILIH_PAKET, INPUT_CUSTOM = range(3)
@@ -24,7 +16,7 @@ PILIH_TANGGAL, PILIH_PAKET, INPUT_CUSTOM = range(3)
 def rupiah(n):
     return f"Rp {int(n):,}".replace(",", ".")
 
-# === LOGGING USER ===
+# === LOGGING ===
 def tulis_log(update: Update):
     user = update.effective_user
     nama = user.full_name
@@ -34,14 +26,15 @@ def tulis_log(update: Update):
     with open("log.txt", "a", encoding="utf-8") as f:
         f.write(f"[{waktu}] Nama: {nama} | Username: @{username}\n")
 
-# === START ===
+# === /START ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    tulis_log(update)
+    tulis_log(update)  # catat user yang akses bot
     return await show_calendar(update, context)
 
 # === KALENDER ===
 async def show_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, new_message=False):
-    keyboard, row = [], []
+    keyboard = []
+    row = []
 
     for day in range(1, 32):
         row.append(InlineKeyboardButton(str(day), callback_data=f"tgl_{day}"))
@@ -60,21 +53,28 @@ async def show_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE, new_
             reply_markup=markup
         )
     else:
-        target = update.callback_query.message if update.callback_query else update.message
-        await target.reply_text(
-            "*PERKIRAAN TANGGAL PS*:",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
+        if update.callback_query:
+            await update.callback_query.message.reply_text(
+                "*PERKIRAAN TANGGAL PS*:",
+                parse_mode="Markdown",
+                reply_markup=markup
+            )
+        else:
+            await update.message.reply_text(
+                "*PERKIRAAN TANGGAL PS*:",
+                parse_mode="Markdown",
+                reply_markup=markup
+            )
 
     return PILIH_TANGGAL
 
-# === PILIH TANGGAL ===
+# === HANDLE TANGGAL ===
 async def pilih_tanggal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
 
-    context.user_data["tanggal"] = int(q.data.replace("tgl_", ""))
+    tgl = int(q.data.replace("tgl_", ""))
+    context.user_data["tanggal"] = tgl
 
     keyboard = [
         [InlineKeyboardButton("20 Mbps (190.000)", callback_data="20")],
@@ -82,11 +82,12 @@ async def pilih_tanggal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("75 Mbps (270.000)", callback_data="75")],
         [InlineKeyboardButton("Paket Custom", callback_data="custom")],
     ]
+    markup = InlineKeyboardMarkup(keyboard)
 
-    await q.edit_message_text("Pilih kecepatan paket:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await q.edit_message_text("Pilih kecepatan paket:", reply_markup=markup)
     return PILIH_PAKET
 
-# === CUSTOM ===
+# === PAKET CUSTOM ===
 async def paket_custom_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
@@ -97,12 +98,13 @@ async def input_paket_custom(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         hp = int(update.message.text)
     except:
-        return await update.message.reply_text("Format tidak valid! Masukkan angka saja.")
+        await update.message.reply_text("Format tidak valid! Masukkan angka saja.")
+        return INPUT_CUSTOM
 
     context.user_data["hp"] = hp
     return await hitung_dan_tampilkan(update, context, custom=True)
 
-# === PILIH PAKET ===
+# === PAKET NORMAL ===
 async def pilih_paket(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
@@ -110,13 +112,16 @@ async def pilih_paket(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if q.data == "custom":
         return await paket_custom_start(update, context)
 
+    speed = int(q.data)
     harga_map = {20: 190000, 50: 240000, 75: 270000}
-    context.user_data["speed"] = int(q.data)
-    context.user_data["hp"] = harga_map[context.user_data["speed"]]
+    hp = harga_map[speed]
+
+    context.user_data["speed"] = speed
+    context.user_data["hp"] = hp
 
     return await hitung_dan_tampilkan(update, context)
 
-# === HITUNG HASIL ===
+# === PERHITUNGAN & OUTPUT ===
 async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYPE, custom=False):
     hp = context.user_data["hp"]
     tgl = context.user_data["tanggal"]
@@ -127,29 +132,37 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     prorata = (hargaharian * jumlahhari + 30000) * 1.11
     pdd = prorata + hargabulanan
 
-    bulan = [
-        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ]
+    bulan_indonesia = {
+        1: "Januari", 2: "Februari", 3: "Maret",
+        4: "April", 5: "Mei", 6: "Juni",
+        7: "Juli", 8: "Agustus", 9: "September",
+        10: "Oktober", 11: "November", 12: "Desember"
+    }
 
     today = datetime.date.today()
     tanggal_daftar = datetime.date(today.year, today.month, tgl)
-    tanggal_text = f"{tanggal_daftar.day} {bulan[tanggal_daftar.month]} {tanggal_daftar.year}"
+    tanggal_text = f"{tanggal_daftar.day} {bulan_indonesia[tanggal_daftar.month]} {tanggal_daftar.year}"
 
-    paket_text = f"Paket Custom {rupiah(hp)}" if custom else f"Paket {context.user_data['speed']}Mbps {rupiah(hp)}"
+    if custom:
+        paket_text = f"Paket Custom {rupiah(hp)}"
+    else:
+        speed = context.user_data["speed"]
+        paket_text = f"Paket {speed}Mbps {rupiah(hp)}"
 
     text = (
         " -= *PDD KALBAR by Fredy* =-\n"
-        "bot aktif dari 07.00 - 20.00\n"
+        "bot aktif 24 jam\n"
         "Ketik /start jika bot tidak respon\n\n"
         f"*Tanggal PS : {tanggal_text}*\n"
         f"*{paket_text}*\n\n"
-        f"*Iuran bulanan : {rupiah(hargabulanan)}/bln*\n"
-        f"*Prorata       : {rupiah(prorata)}*\n"
-        f"*Estimasi PDD+2 : {rupiah(pdd)}*\n"
+        f"*Iuran bulanan      : {rupiah(hargabulanan)}/bln*\n"
+        f"*Estimasi Prorata : {rupiah(prorata)}*\n"
+        f"*Estimasi PDD+2  : {rupiah(pdd)}*\n"
     )
 
-    keyboard = [[InlineKeyboardButton("PILIH TANGGAL LAIN", callback_data="start")]]
+    keyboard = [
+        [InlineKeyboardButton("PILIH TANGGAL LAIN", callback_data="start")],
+    ]
     markup = InlineKeyboardMarkup(keyboard)
 
     if update.callback_query:
@@ -159,36 +172,38 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
 
     return PILIH_TANGGAL
 
-# === ULANG ===
+# === TOMBOL START (ulang) ===
 async def ulang(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
     return await show_calendar(update, context, new_message=True)
 
-# === RUN ===
+# === MAIN ===
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     conv = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
             PILIH_TANGGAL: [
                 CallbackQueryHandler(pilih_tanggal, pattern="^tgl_"),
-                CallbackQueryHandler(ulang, pattern="^start$")
+                CallbackQueryHandler(ulang, pattern="^start$"),
             ],
             PILIH_PAKET: [
                 CallbackQueryHandler(pilih_paket),
-                CallbackQueryHandler(ulang, pattern="^start$")
+                CallbackQueryHandler(ulang, pattern="^start$"),
             ],
             INPUT_CUSTOM: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, input_paket_custom),
-                CallbackQueryHandler(ulang, pattern="^start$")
+                CallbackQueryHandler(ulang, pattern="^start$"),
             ],
         },
-        fallbacks=[]
+        fallbacks=[],
     )
 
     app.add_handler(conv)
 
-    print("BOT BERJALAN DI ZEABUR…")
+    print("Bot berjalan 24 jam...")
     app.run_polling()
 
 if __name__ == "__main__":
