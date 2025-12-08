@@ -8,7 +8,7 @@ from telegram.ext import (
 import datetime
 import os
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Ambil token dari Environment di Zeabur
 
 # === STATE ===
 PILIH_TANGGAL, PILIH_PAKET, INPUT_CUSTOM = range(3)
@@ -179,8 +179,8 @@ async def ulang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await q.answer()
     return await show_calendar(update, context, new_message=True)
 
-# === MAIN ===
-def run_bot():
+# === MAIN ZEABUR ===
+def run():
     app = Application.builder().token(BOT_TOKEN).build()
 
     conv = ConversationHandler(
@@ -203,9 +203,8 @@ def run_bot():
     )
 
     app.add_handler(conv)
-
-    print("Bot berjalan di Koyeb...")
+    print("Bot berjalan di Zeabur...")
     app.run_polling()
 
 if __name__ == "__main__":
-    run_bot()
+    run()
