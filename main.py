@@ -115,8 +115,7 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     tanggal_text = f"{tanggal_daftar.day} {bulan_indonesia[tanggal_daftar.month]} {tanggal_daftar.year}"
     paket_text = f"Paket Custom {rupiah(hp)}" if custom else f"Paket {context.user_data['speed']}Mbps {rupiah(hp)}"
     text = (
-        " -= *PDD KALBAR by Fredy* =-\n"
-        "bot aktif 24 jam\n"
+        " -= *Hitung PDD+2 by Fredy* =-\n"
         "Ketik /start jika bot tidak respon\n\n"
         f"*Tanggal PS : {tanggal_text}*\n"
         f"*{paket_text}*\n\n"
