@@ -107,7 +107,8 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     hargaharian = (hp - 30000) / 31
     jumlahhari = 32 - tgl
     prorata = (hargaharian * jumlahhari + 30000) * 1.11
-    pdd = prorata + hargabulanan
+    pdd1 = prorata + 99000
+    pdd2 = prorata + hargabulanan + 99000
     bulan_indonesia = {1:"Januari",2:"Februari",3:"Maret",4:"April",5:"Mei",6:"Juni",
                        7:"Juli",8:"Agustus",9:"September",10:"Oktober",11:"November",12:"Desember"}
     today = datetime.date.today()
@@ -116,12 +117,15 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
     paket_text = f"Paket Custom {rupiah(hp)}" if custom else f"Paket {context.user_data['speed']}Mbps {rupiah(hp)}"
     text = (
         " -= *Hitung PDD+2 by Fredy* =-\n"
-        "tekan *HITUNG ULANG* atau /start jika bot tidak respon\n\n"
+        "Last Update 9 Desember 2025\n"
+        "Tekan *HITUNG ULANG* atau /start jika bot tidak respon\n\n"
         f"*Tanggal PS : {tanggal_text}*\n"
-        f"*{paket_text}*\n\n"
-        f"*Iuran bulanan      : {rupiah(hargabulanan)}/bln*\n"
-        f"*Estimasi Prorata : {rupiah(prorata)}*\n"
-        f"*Estimasi PDD+2  : {rupiah(pdd)}*\n"
+        f"*{paket_text}*\n"
+        f"*Biaya PSB = Rp 99.000*\n\n"
+        f"*Iuran bulanan        = {rupiah(hargabulanan)}/bln*\n"
+        f"*Estimasi Prorata    = {rupiah(prorata)}*\n"
+        f"*Biaya PSB + PDD+1 = {rupiah(pdd1)}*\n"
+        f"*Biaya PSB + PDD+2 = {rupiah(pdd2)}*\n"
     )
     markup = InlineKeyboardMarkup([[InlineKeyboardButton("HITUNG ULANG", callback_data="start")]])
     if update.callback_query:
