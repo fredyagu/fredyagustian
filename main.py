@@ -122,9 +122,9 @@ async def hitung_dan_tampilkan(update: Update, context: ContextTypes.DEFAULT_TYP
         f"*Tanggal PS : {tanggal_text}*\n"
         f"*{paket_text}*\n"
         f"*Biaya PSB = Rp 166.500*\n\n"
-        f"*Iuran bulanan        = {rupiah(hargabulanan)}/bln*\n"
-        f"*Estimasi Prorata    = {rupiah(prorata)}*\n"
-#        f"*Biaya PSB + PDD+1 = {rupiah(pdd1)}*\n"
+        f"*Iuran bulanan     = {rupiah(hargabulanan)}/bln*\n"
+        f"*Estimasi Prorata  = {rupiah(prorata)}*\n"
+        f"*Biaya PSB + PDD+1 = {rupiah(pdd1)}*\n"
 #        f"*Biaya PSB + PDD+2 = {rupiah(pdd2)}*\n"
     )
     markup = InlineKeyboardMarkup([[InlineKeyboardButton("HITUNG ULANG", callback_data="start")]])
